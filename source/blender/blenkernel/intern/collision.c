@@ -1476,8 +1476,6 @@ void cloth_free_contacts(ColliderContacts *collider_contacts, int totcolliders)
 
 /* Bullet collision */
 
-#ifdef WITH_BULLET
-
 void cloth_contact_cache_init(CollisionContactCache *cache, int buffersize)
 {
 	BLI_assert(buffersize > 0);
@@ -1507,6 +1505,8 @@ CollisionContactPoint *cloth_contact_cache_push(CollisionContactCache *cache)
 	cache->totpoints += 1;
 	return buf->points + totbuf;
 }
+
+#ifdef WITH_BULLET
 
 static void cloth_strands_contact_cb(void *userdata, rbManifoldPoint *cp,
                                      const void *UNUSED(collob0), rbObjectType UNUSED(type0), int UNUSED(part0), int UNUSED(index0),
