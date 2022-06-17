@@ -57,11 +57,15 @@ def update_script_node(node, report):
 
             if ok:
                 # copy .oso from temporary path to .osl directory
-                dst_path = script_path_noext + ".oso"
+                dst_path = f"{script_path_noext}.oso"
                 try:
                     shutil.copy2(oso_path, dst_path)
                 except:
-                    report({'ERROR'}, "Failed to write .oso file next to external .osl file at " + dst_path)
+                    report(
+                        {'ERROR'},
+                        f"Failed to write .oso file next to external .osl file at {dst_path}",
+                    )
+
         elif os.path.dirname(node.filepath) == "":
             # module in search path
             oso_path = node.filepath
@@ -88,19 +92,16 @@ def update_script_node(node, report):
             osl_file.close()
 
             ok, oso_path = osl_compile(osl_file.name, report)
-            oso_file_remove = False
             os.remove(osl_file.name)
         else:
             # compile text datablock from disk directly
             ok, oso_path = osl_compile(osl_path, report)
-            oso_file_remove = False
-
+        oso_file_remove = False
         if ok:
             # read bytecode
             try:
-                oso = open(oso_path, 'r')
-                node.bytecode = oso.read()
-                oso.close()
+                with open(oso_path, 'r') as oso:
+                    node.bytecode = oso.read()
             except:
                 import traceback
                 traceback.print_exc()
@@ -117,7 +118,7 @@ def update_script_node(node, report):
         ok = _cycles.osl_update_node(node.id_data.as_pointer(), node.as_pointer(), oso_path)
 
         if not ok:
-            report({'ERROR'}, "OSL query failed to open " + oso_path)
+            report({'ERROR'}, f"OSL query failed to open {oso_path}")
     else:
         report({'ERROR'}, "OSL script compilation failed, see console for errors")
 

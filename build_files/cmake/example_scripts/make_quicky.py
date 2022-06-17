@@ -35,34 +35,31 @@ def print_help(targets):
     print("")
     print("Target List:")
     for t in targets:
-        print("    %s" % t)
+        print(f"    {t}")
     print("...exiting")
 
 
 def main():
     targets = set()
 
-    # collect targets
-    makefile = open("Makefile", "r")
-    for line in makefile:
-        line = line.rstrip()
-        if not line or line[0] in ". \t@$#":
-            continue
+    with open("Makefile", "r") as makefile:
+        for line in makefile:
+            line = line.rstrip()
+            if not line or line[0] in ". \t@$#":
+                continue
 
-        line = line.split("#", 1)[0]
-        if ":" not in line:
-            continue
+            line = line.split("#", 1)[0]
+            if ":" not in line:
+                continue
 
-        line = line.split(":", 1)[0]
+            line = line.split(":", 1)[0]
 
-        if "/" in line:  # cmake terget options, dont need these
-            continue
+            if "/" in line:  # cmake terget options, dont need these
+                continue
 
-        targets.add(line)
-    makefile.close()
-
+            targets.add(line)
     # remove cmake targets
-    bad = set([
+    bad = {
         "help",
         "clean",
         "all",
@@ -74,14 +71,12 @@ def main():
         "rebuild_cache",
         "depend",
         "cmake_check_build_system",
-        ])
+    }
+
 
     targets -= set(bad)
 
-    # parse args
-    targets = list(targets)
-    targets.sort()
-
+    targets = sorted(targets)
     import sys
     if len(sys.argv) == 1:
         print_help(targets)
@@ -102,14 +97,14 @@ def main():
             if not found:
                 print("Error '%s' not found in...")
                 for t in targets:
-                    print("    %s" % t)
+                    print(f"    {t}")
                 print("...aborting.")
                 return
 
     # execute
-    cmd = "make %s %s blender/fast" % (" ".join(args), " ".join(targets_new))
-    print("cmake building with targets: %s" % " ".join(targets_new))
-    print("executing: %s" % cmd)
+    cmd = f'make {" ".join(args)} {" ".join(targets_new)} blender/fast'
+    print(f'cmake building with targets: {" ".join(targets_new)}')
+    print(f"executing: {cmd}")
 
     import os
     os.system(cmd)

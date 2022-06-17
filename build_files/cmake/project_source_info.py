@@ -71,10 +71,14 @@ def cmake_cache_var_iter():
 
 
 def cmake_cache_var(var):
-    for var_iter, type_iter, value_iter in cmake_cache_var_iter():
-        if var == var_iter:
-            return value_iter
-    return None
+    return next(
+        (
+            value_iter
+            for var_iter, type_iter, value_iter in cmake_cache_var_iter()
+            if var == var_iter
+        ),
+        None,
+    )
 
 
 def do_ignore(filepath, ignore_prefix_list):
@@ -82,7 +86,7 @@ def do_ignore(filepath, ignore_prefix_list):
         return False
 
     relpath = os.path.relpath(filepath, SOURCE_DIR)
-    return any([relpath.startswith(prefix) for prefix in ignore_prefix_list])
+    return any(relpath.startswith(prefix) for prefix in ignore_prefix_list)
 
 
 def makefile_log():
@@ -135,7 +139,7 @@ def build_info(use_c=True, use_cxx=True, ignore_prefix_list=None):
 
         args = line.split()
 
-        if not any([(c in args) for c in compilers]):
+        if all(c not in args for c in compilers):
             continue
 
         # join args incase they are not.
@@ -155,12 +159,11 @@ def build_info(use_c=True, use_cxx=True, ignore_prefix_list=None):
         c_files = [f for f in args if is_c(f)]
         inc_dirs = [f[2:].strip() for f in args if f.startswith('-I')]
         defs = [f[2:].strip() for f in args if f.startswith('-D')]
-        for c in sorted(c_files):
-
-            if do_ignore(c, ignore_prefix_list):
-                continue
-
-            source.append((c, inc_dirs, defs))
+        source.extend(
+            (c, inc_dirs, defs)
+            for c in sorted(c_files)
+            if not do_ignore(c, ignore_prefix_list)
+        )
 
         # make relative includes absolute
         # not totally essential but useful
@@ -171,7 +174,7 @@ def build_info(use_c=True, use_cxx=True, ignore_prefix_list=None):
         # safety check that our includes are ok
         for f in inc_dirs:
             if not os.path.exists(f):
-                raise Exception("%s missing" % f)
+                raise Exception(f"{f} missing")
 
     print("done!")
 

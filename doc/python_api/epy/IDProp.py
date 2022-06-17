@@ -42,7 +42,7 @@ class IDGroup:
 	@type name: string
 	"""
 	
-	def pop(item):
+	def pop(self):
 		"""
 		Pop an item from the group property.
 		@type item: string
@@ -51,7 +51,7 @@ class IDGroup:
 		@return: The removed property.	
 		"""
 		
-	def update(updatedict):
+	def update(self):
 		"""
 		Updates items in the dict, similar to normal python
 		dictionary method .update().
@@ -121,10 +121,10 @@ class IDArray:
 	@ivar type: returns the type of the array, can be either IDP_Int or IDP_Float
 	"""
 	
-	def __getitem__(index):
+	def __getitem__(self):
 		pass
 	
-	def __setitem__(index, value):
+	def __setitem__(self, value):
 		pass
 	
 	def __len__():

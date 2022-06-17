@@ -121,7 +121,7 @@ def is_c_any(filename):
 
 def is_svn_file(filename):
     dn, fn = os.path.split(filename)
-    filename_svn = join(dn, ".svn", "text-base", "%s.svn-base" % fn)
+    filename_svn = join(dn, ".svn", "text-base", f"{fn}.svn-base")
     return exists(filename_svn)
 
 
@@ -140,13 +140,12 @@ def cmake_advanced_info():
         print("CMAKE_DIR %r" % CMAKE_DIR)
         if sys.platform == "win32":
             cmd = 'cmake "%s" -G"Eclipse CDT4 - MinGW Makefiles"' % CMAKE_DIR
+        elif make_exe_basename.startswith(("make", "gmake")):
+            cmd = 'cmake "%s" -G"Eclipse CDT4 - Unix Makefiles"' % CMAKE_DIR
+        elif make_exe_basename.startswith("ninja"):
+            cmd = 'cmake "%s" -G"Eclipse CDT4 - Ninja"' % CMAKE_DIR
         else:
-            if make_exe_basename.startswith(("make", "gmake")):
-                cmd = 'cmake "%s" -G"Eclipse CDT4 - Unix Makefiles"' % CMAKE_DIR
-            elif make_exe_basename.startswith("ninja"):
-                cmd = 'cmake "%s" -G"Eclipse CDT4 - Ninja"' % CMAKE_DIR
-            else:
-                raise Exception("Unknown make program %r" % make_exe)
+            raise Exception("Unknown make program %r" % make_exe)
 
         os.system(cmd)
         return join(CMAKE_DIR, ".cproject")
@@ -207,14 +206,11 @@ def cmake_advanced_info():
 
 
 def cmake_cache_var(var):
-    cache_file = open(join(CMAKE_DIR, "CMakeCache.txt"), encoding='utf-8')
-    lines = [l_strip for l in cache_file for l_strip in (l.strip(),) if l_strip if not l_strip.startswith("//") if not l_strip.startswith("#")]
-    cache_file.close()
-
-    for l in lines:
-        if l.split(":")[0] == var:
-            return l.split("=", 1)[-1]
-    return None
+    with open(join(CMAKE_DIR, "CMakeCache.txt"), encoding='utf-8') as cache_file:
+        lines = [l_strip for l in cache_file for l_strip in (l.strip(),) if l_strip if not l_strip.startswith("//") if not l_strip.startswith("#")]
+    return next(
+        (l.split("=", 1)[-1] for l in lines if l.split(":")[0] == var), None
+    )
 
 
 def cmake_compiler_defines():
@@ -228,12 +224,10 @@ def cmake_compiler_defines():
     temp_c = tempfile.mkstemp(suffix=".c")[1]
     temp_def = tempfile.mkstemp(suffix=".def")[1]
 
-    os.system("%s -dM -E %s > %s" % (compiler, temp_c, temp_def))
+    os.system(f"{compiler} -dM -E {temp_c} > {temp_def}")
 
-    temp_def_file = open(temp_def)
-    lines = [l.strip() for l in temp_def_file if l.strip()]
-    temp_def_file.close()
-
+    with open(temp_def) as temp_def_file:
+        lines = [l.strip() for l in temp_def_file if l.strip()]
     os.remove(temp_c)
     os.remove(temp_def)
     return lines

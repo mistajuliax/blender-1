@@ -24,15 +24,18 @@ def FindSharedPtr(conf):
             namespace = 'std::tr1'
             header = 'memory'
 
-    if not namespace and conf.CheckCXXHeader("tr1/memory"):
-        # Further, gcc defines shared_ptr in std::tr1 namespace and
-        # <tr1/memory> is to be included for this. And what makes things
-        # even more tricky is that gcc does have <memory> header, so
-        # all the checks above wouldn't find shared_ptr.
-        if conf.CheckType('std::tr1::shared_ptr<int>', language = 'C++', includes="#include <tr1/memory>"):
-            print("-- Found shared_ptr in std::tr1 namespace using <tr1/memory> header..")
-            namespace = 'std::tr1'
-            header = 'tr1/memory'
+    if (
+        not namespace
+        and conf.CheckCXXHeader("tr1/memory")
+        and conf.CheckType(
+            'std::tr1::shared_ptr<int>',
+            language='C++',
+            includes="#include <tr1/memory>",
+        )
+    ):
+        print("-- Found shared_ptr in std::tr1 namespace using <tr1/memory> header..")
+        namespace = 'std::tr1'
+        header = 'tr1/memory'
 
     if not namespace:
         print("-- Unable to find shared_ptrred_map>.")

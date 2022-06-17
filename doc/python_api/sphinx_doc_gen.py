@@ -192,11 +192,7 @@ def handle_args():
                         ),
                         required=False)
 
-    # parse only the args passed after '--'
-    argv = []
-    if "--" in sys.argv:
-        argv = sys.argv[sys.argv.index("--") + 1:]  # get all args after "--"
-
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     return parser.parse_args(argv)
 
 
@@ -282,12 +278,15 @@ else:
     m = None
     EXCLUDE_MODULES = [m for m in EXCLUDE_MODULES if not fnmatch.fnmatchcase(m, ARGS.partial)]
 
-    # special support for bpy.types.XXX
-    FILTER_BPY_OPS = tuple([m[8:] for m in ARGS.partial.split(":") if m.startswith("bpy.ops.")])
-    if FILTER_BPY_OPS:
+    if FILTER_BPY_OPS := tuple(
+        m[8:] for m in ARGS.partial.split(":") if m.startswith("bpy.ops.")
+    ):
         EXCLUDE_MODULES.remove("bpy.ops")
 
-    FILTER_BPY_TYPES = tuple([m[10:] for m in ARGS.partial.split(":") if m.startswith("bpy.types.")])
+    FILTER_BPY_TYPES = tuple(
+        m[10:] for m in ARGS.partial.split(":") if m.startswith("bpy.types.")
+    )
+
     if FILTER_BPY_TYPES:
         EXCLUDE_MODULES.remove("bpy.types")
 
@@ -324,10 +323,12 @@ except ImportError:
 
 # examples
 EXAMPLES_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "examples"))
-EXAMPLE_SET = set()
-for f in os.listdir(EXAMPLES_DIR):
-    if f.endswith(".py"):
-        EXAMPLE_SET.add(os.path.splitext(f)[0])
+EXAMPLE_SET = {
+    os.path.splitext(f)[0]
+    for f in os.listdir(EXAMPLES_DIR)
+    if f.endswith(".py")
+}
+
 EXAMPLE_SET_USED = set()
 
 # rst files dir
@@ -395,19 +396,19 @@ BLENDER_DATE = str(bpy.app.build_date, 'utf_8')
 
 BLENDER_VERSION_DOTS = ".".join(blender_version_strings)    # '2.62.1'
 if BLENDER_REVISION != "Unknown":
-    BLENDER_VERSION_DOTS += " " + BLENDER_REVISION          # '2.62.1 SHA1'
+    BLENDER_VERSION_DOTS += f" {BLENDER_REVISION}"
 
 BLENDER_VERSION_PATH = "_".join(blender_version_strings)    # '2_62_1'
 if bpy.app.version_cycle == "release":
-    BLENDER_VERSION_PATH = "%s%s_release" % ("_".join(blender_version_strings[:2]),
-                                             bpy.app.version_char)   # '2_62_release'
+    BLENDER_VERSION_PATH = f'{"_".join(blender_version_strings[:2])}{bpy.app.version_char}_release'
+
 
 # --------------------------DOWNLOADABLE FILES----------------------------------
 
-REFERENCE_NAME = "blender_python_reference_%s" % BLENDER_VERSION_PATH
+REFERENCE_NAME = f"blender_python_reference_{BLENDER_VERSION_PATH}"
 REFERENCE_PATH = os.path.join(ARGS.output_dir, REFERENCE_NAME)
-BLENDER_PDF_FILENAME = "%s.pdf" % REFERENCE_NAME
-BLENDER_ZIP_FILENAME = "%s.zip" % REFERENCE_NAME
+BLENDER_PDF_FILENAME = f"{REFERENCE_NAME}.pdf"
+BLENDER_ZIP_FILENAME = f"{REFERENCE_NAME}.zip"
 
 # -------------------------------SPHINX-----------------------------------------
 
@@ -416,10 +417,10 @@ if ARGS.sphinx_theme == "blender-org":
     SPHINX_THEME_SVN_DIR = os.path.join(SCRIPT_DIR, ARGS.sphinx_theme)
 
 SPHINX_IN = os.path.join(ARGS.output_dir, "sphinx-in")
-SPHINX_IN_TMP = SPHINX_IN + "-tmp"
+SPHINX_IN_TMP = f"{SPHINX_IN}-tmp"
 SPHINX_OUT = os.path.join(ARGS.output_dir, "sphinx-out")
 if ARGS.sphinx_named_output:
-    SPHINX_OUT += "_%s" % ARGS.sphinx_theme
+    SPHINX_OUT += f"_{ARGS.sphinx_theme}"
 
 # html build
 if ARGS.sphinx_build:
@@ -463,10 +464,8 @@ from types import (
         )
 
 _BPY_STRUCT_FAKE = "bpy_struct"
-_BPY_PROP_COLLECTION_FAKE = "bpy_prop_collection"
-
-if _BPY_PROP_COLLECTION_FAKE:
-    _BPY_PROP_COLLECTION_ID = ":class:`%s`" % _BPY_PROP_COLLECTION_FAKE
+if _BPY_PROP_COLLECTION_FAKE := "bpy_prop_collection":
+    _BPY_PROP_COLLECTION_ID = f":class:`{_BPY_PROP_COLLECTION_FAKE}`"
 else:
     _BPY_PROP_COLLECTION_ID = "collection"
 
@@ -477,21 +476,6 @@ def is_struct_seq(value):
 
 def undocumented_message(module_name, type_name, identifier):
     return "Undocumented"
-
-    """
-    if str(type_name).startswith('<module'):
-        preloadtitle = '%s.%s' % (module_name, identifier)
-    else:
-        preloadtitle = '%s.%s.%s' % (module_name, type_name, identifier)
-    message = ("Undocumented (`contribute "
-               "<http://wiki.blender.org/index.php/"
-               "Dev:2.5/Py/API/Generating_API_Reference/Contribute"
-               "?action=edit"
-               "&section=new"
-               "&preload=Dev:2.5/Py/API/Generating_API_Reference/Contribute/Howto-message"
-               "&preloadtitle=%s>`_)\n\n" % preloadtitle)
-    return message
-    """
 
 
 def range_str(val):
@@ -510,25 +494,24 @@ def range_str(val):
 
 
 def example_extract_docstring(filepath):
-    file = open(filepath, "r", encoding="utf-8")
-    line = file.readline()
-    line_no = 0
-    text = []
-    if line.startswith('"""'):  # assume nothing here
-        line_no += 1
-    else:
-        file.close()
-        return "", 0
-
-    for line in file.readlines():
-        line_no += 1
-        if line.startswith('"""'):
-            break
+    with open(filepath, "r", encoding="utf-8") as file:
+        line = file.readline()
+        line_no = 0
+        text = []
+        if line.startswith('"""'):  # assume nothing here
+            line_no += 1
         else:
-            text.append(line.rstrip())
+            file.close()
+            return "", 0
 
-    line_no += 1
-    file.close()
+        for line in file.readlines():
+            line_no += 1
+            if line.startswith('"""'):
+                break
+            else:
+                text.append(line.rstrip())
+
+        line_no += 1
     return "\n".join(text), line_no
 
 
@@ -545,7 +528,7 @@ def write_example_ref(ident, fw, example_id, ext="py"):
     if example_id in EXAMPLE_SET:
 
         # extract the comment
-        filepath = os.path.join("..", "examples", "%s.%s" % (example_id, ext))
+        filepath = os.path.join("..", "examples", f"{example_id}.{ext}")
         filepath_full = os.path.join(os.path.dirname(fw.__self__.name), filepath)
 
         text, line_no = example_extract_docstring(filepath_full)
@@ -559,19 +542,17 @@ def write_example_ref(ident, fw, example_id, ext="py"):
             fw("%s   :lines: %d-\n" % (ident, line_no))
         fw("\n")
         EXAMPLE_SET_USED.add(example_id)
-    else:
-        if bpy.app.debug:
-            BPY_LOGGER.debug("\tskipping example: " + example_id)
+    elif bpy.app.debug:
+        BPY_LOGGER.debug("\tskipping example: " + example_id)
 
     # Support for numbered files bpy.types.Operator -> bpy.types.Operator.1.py
     i = 1
     while True:
         example_id_num = "%s.%d" % (example_id, i)
-        if example_id_num in EXAMPLE_SET:
-            write_example_ref(ident, fw, example_id_num, ext)
-            i += 1
-        else:
+        if example_id_num not in EXAMPLE_SET:
             break
+        write_example_ref(ident, fw, example_id_num, ext)
+        i += 1
 
 
 def write_indented_lines(ident, fn, text, strip=True):
@@ -609,17 +590,17 @@ def pymethod2sphinx(ident, fw, identifier, py_func):
     '''
     arg_str = inspect.formatargspec(*inspect.getargspec(py_func))
     if arg_str.startswith("(self, "):
-        arg_str = "(" + arg_str[7:]
+        arg_str = f"({arg_str[7:]}"
         func_type = "method"
     elif arg_str.startswith("(cls, "):
-        arg_str = "(" + arg_str[6:]
+        arg_str = f"({arg_str[6:]}"
         func_type = "classmethod"
     else:
         func_type = "staticmethod"
 
     fw(ident + ".. %s:: %s%s\n\n" % (func_type, identifier, arg_str))
     if py_func.__doc__:
-        write_indented_lines(ident + "   ", fw, py_func.__doc__)
+        write_indented_lines(f"{ident}   ", fw, py_func.__doc__)
         fw("\n")
 
 
@@ -638,18 +619,18 @@ def pyfunc2sphinx(ident, fw, module_name, type_name, identifier, py_func, is_cla
 
         # ther rest are class methods
     elif arg_str.startswith("(self, ") or arg_str == "(self)":
-        arg_str = "()" if (arg_str == "(self)") else ("(" + arg_str[7:])
+        arg_str = "()" if arg_str == "(self)" else f"({arg_str[7:]}"
         func_type = "method"
     elif arg_str.startswith("(cls, "):
-        arg_str = "()" if (arg_str == "(cls)") else ("(" + arg_str[6:])
+        arg_str = "()" if arg_str == "(cls)" else f"({arg_str[6:]}"
         func_type = "classmethod"
     else:
         func_type = "staticmethod"
 
     doc = py_func.__doc__
-    if (not doc) or (not doc.startswith(".. %s:: " % func_type)):
+    if not doc or not doc.startswith(f".. {func_type}:: "):
         fw(ident + ".. %s:: %s%s\n\n" % (func_type, identifier, arg_str))
-        ident_temp = ident + "   "
+        ident_temp = f"{ident}   "
     else:
         ident_temp = ident
 
@@ -659,9 +640,9 @@ def pyfunc2sphinx(ident, fw, module_name, type_name, identifier, py_func, is_cla
     del doc, ident_temp
 
     if is_class:
-        write_example_ref(ident + "   ", fw, module_name + "." + type_name + "." + identifier)
+        write_example_ref(f"{ident}   ", fw, f"{module_name}.{type_name}.{identifier}")
     else:
-        write_example_ref(ident + "   ", fw, module_name + "." + identifier)
+        write_example_ref(f"{ident}   ", fw, f"{module_name}.{identifier}")
 
 
 def py_descr2sphinx(ident, fw, descr, module_name, type_name, identifier):
@@ -674,11 +655,11 @@ def py_descr2sphinx(ident, fw, descr, module_name, type_name, identifier):
 
     if type(descr) == GetSetDescriptorType:
         fw(ident + ".. attribute:: %s\n\n" % identifier)
-        write_indented_lines(ident + "   ", fw, doc, False)
+        write_indented_lines(f"{ident}   ", fw, doc, False)
         fw("\n")
     elif type(descr) == MemberDescriptorType:  # same as above but use 'data'
         fw(ident + ".. data:: %s\n\n" % identifier)
-        write_indented_lines(ident + "   ", fw, doc, False)
+        write_indented_lines(f"{ident}   ", fw, doc, False)
         fw("\n")
     elif type(descr) in {MethodDescriptorType, ClassMethodDescriptorType}:
         write_indented_lines(ident, fw, doc, False)
@@ -686,7 +667,7 @@ def py_descr2sphinx(ident, fw, descr, module_name, type_name, identifier):
     else:
         raise TypeError("type was not GetSetDescriptorType, MethodDescriptorType or ClassMethodDescriptorType")
 
-    write_example_ref(ident + "   ", fw, module_name + "." + type_name + "." + identifier)
+    write_example_ref(f"{ident}   ", fw, f"{module_name}.{type_name}.{identifier}")
     fw("\n")
 
 
@@ -701,12 +682,12 @@ def py_c_func2sphinx(ident, fw, module_name, type_name, identifier, py_func, is_
         fw("\n")
     else:
         fw(ident + ".. function:: %s()\n\n" % identifier)
-        fw(ident + "   " + undocumented_message(module_name, type_name, identifier))
+        fw(f"{ident}   {undocumented_message(module_name, type_name, identifier)}")
 
     if is_class:
-        write_example_ref(ident + "   ", fw, module_name + "." + type_name + "." + identifier)
+        write_example_ref(f"{ident}   ", fw, f"{module_name}.{type_name}.{identifier}")
     else:
-        write_example_ref(ident + "   ", fw, module_name + "." + identifier)
+        write_example_ref(f"{ident}   ", fw, f"{module_name}.{identifier}")
 
     fw("\n")
 
@@ -720,7 +701,7 @@ def pyprop2sphinx(ident, fw, identifier, py_prop):
         fw(ident + ".. data:: %s\n\n" % identifier)
     else:
         fw(ident + ".. attribute:: %s\n\n" % identifier)
-    write_indented_lines(ident + "   ", fw, py_prop.__doc__)
+    write_indented_lines(f"{ident}   ", fw, py_prop.__doc__)
     if py_prop.fset is None:
         fw(ident + "   (readonly)\n\n")
     else:
@@ -1144,12 +1125,7 @@ def pyrna_enum2sphinx(prop, use_empty_descriptions=False):
     if use_empty_descriptions:
         ok = True
     else:
-        ok = False
-        for identifier, name, description in prop.enum_items:
-            if description:
-                ok = True
-                break
-
+        ok = any(description for identifier, name, description in prop.enum_items)
     if ok:
         return "".join(["* ``%s`` %s.\n" %
                         (identifier,
@@ -1183,7 +1159,7 @@ def pyrna2sphinx(basepath):
             id_name = "arg"
             id_type = "type"
             kwargs = {"as_arg": True}
-            identifier = " %s" % prop.identifier
+            identifier = f" {prop.identifier}"
 
         kwargs["class_fmt"] = ":class:`%s`"
 
@@ -1197,14 +1173,21 @@ def pyrna2sphinx(basepath):
             fw(ident + ":%s%s:\n\n" % (id_name, identifier))
 
             if prop.name or prop.description:
-                fw(ident + "   " + ", ".join(val for val in (prop.name, prop.description) if val) + "\n\n")
+                fw(
+                    f"{ident}   "
+                    + ", ".join(
+                        val for val in (prop.name, prop.description) if val
+                    )
+                    + "\n\n"
+                )
+
 
             # special exception, cant use genric code here for enums
             if enum_text:
-                write_indented_lines(ident + "   ", fw, enum_text)
+                write_indented_lines(f"{ident}   ", fw, enum_text)
                 fw("\n")
             del enum_text
-            # end enum exception
+                # end enum exception
 
         fw(ident + ":%s%s: %s\n" % (id_type, identifier, type_descr))
 

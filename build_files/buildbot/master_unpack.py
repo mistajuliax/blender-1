@@ -53,7 +53,7 @@ def get_platform(filename):
     platform_tokens = []
     found = False
 
-    for i, token in enumerate(tokens):
+    for token in tokens:
         if not found:
             for platform in platforms:
                 if platform in token.lower():
@@ -74,11 +74,7 @@ def get_branch(filename):
         if token == "blender":
             return branch
 
-        if branch == "":
-            branch = token
-        else:
-            branch = branch + "-" + token
-
+        branch = token if branch == "" else f"{branch}-{token}"
     return ""
 
 # get filename

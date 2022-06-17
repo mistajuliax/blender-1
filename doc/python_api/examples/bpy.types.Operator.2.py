@@ -29,7 +29,7 @@ class ExportSomeData(bpy.types.Operator):
 
     def execute(self, context):
         file = open(self.filepath, 'w')
-        file.write("Hello World " + context.object.name)
+        file.write(f"Hello World {context.object.name}")
         return {'FINISHED'}
 
     def invoke(self, context, event):

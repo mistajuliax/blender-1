@@ -44,7 +44,10 @@ def man_format(data):
 
 if len(sys.argv) != 3:
     import getopt
-    raise getopt.GetoptError("Usage: %s <path-to-blender> <output-filename>" % sys.argv[0])
+    raise getopt.GetoptError(
+        f"Usage: {sys.argv[0]} <path-to-blender> <output-filename>"
+    )
+
 
 blender_bin = sys.argv[1]
 outfilename = sys.argv[2]
@@ -57,20 +60,20 @@ blender_version = blender_version.split("build")[0].rstrip()
 blender_version = blender_version.partition(" ")[2]  # remove 'Blender' prefix.
 date_string = datetime.date.fromtimestamp(time.time()).strftime("%B %d, %Y")
 
-outfile = open(outfilename, "w")
-fw = outfile.write
+with open(outfilename, "w") as outfile:
+    fw = outfile.write
 
-fw('.TH "BLENDER" "1" "%s" "Blender %s"\n' % (date_string, blender_version.replace(".", "\\&.")))
+    fw('.TH "BLENDER" "1" "%s" "Blender %s"\n' % (date_string, blender_version.replace(".", "\\&.")))
 
-fw('''
+    fw('''
 .SH NAME
 blender \- a 3D modelling and rendering package''')
 
-fw('''
+    fw('''
 .SH SYNOPSIS
 .B blender [args ...] [file] [args ...]''')
 
-fw('''
+    fw('''
 .br
 .SH DESCRIPTION
 .PP
@@ -81,48 +84,45 @@ Use Blender to create TV commercials, to make technical visualizations, business
 
 http://www.blender.org''')
 
-fw('''
+    fw('''
 .SH OPTIONS''')
 
-fw("\n\n")
+    fw("\n\n")
 
-lines = [line.rstrip() for line in blender_help.split("\n")]
+    lines = [line.rstrip() for line in blender_help.split("\n")]
 
-while lines:
-    l = lines.pop(0)
-    if l.startswith("Environment Variables:"):
-        fw('.SH "ENVIRONMENT VARIABLES"\n')
-    elif l.endswith(":"):  # one line
-        fw('.SS "%s"\n\n' % l)
-    elif l.startswith("-") or l.startswith("/"):  # can be multi line
+    while lines:
+        l = lines.pop(0)
+        if l.startswith("Environment Variables:"):
+            fw('.SH "ENVIRONMENT VARIABLES"\n')
+        elif l.endswith(":"):  # one line
+            fw('.SS "%s"\n\n' % l)
+        elif l.startswith("-") or l.startswith("/"):  # can be multi line
 
-        fw('.TP\n')
-        fw('.B %s\n' % man_format(l))
+            fw('.TP\n')
+            fw('.B %s\n' % man_format(l))
 
-        while lines:
-            # line with no
-            if lines[0].strip() and len(lines[0].lstrip()) == len(lines[0]):  # no white space
-                break
+            while lines and not (
+                lines[0].strip() and len(lines[0].lstrip()) == len(lines[0])
+            ):
+                if l:
+                    fw('.br\n')
 
-            if not l:  # second blank line
-                fw('.IP\n')
-            else:
-                fw('.br\n')
+                else:  # second blank line
+                    fw('.IP\n')
+                l = lines.pop(0)
+                l = l[1:]  # remove first whitespace (tab)
 
-            l = lines.pop(0)
-            l = l[1:]  # remove first whitespace (tab)
+                fw('%s\n' % man_format(l))
 
-            fw('%s\n' % man_format(l))
-
-    else:
-        if not l.strip():
+        elif not l.strip():
             fw('.br\n')
         else:
             fw('%s\n' % man_format(l))
 
-# footer
+    # footer
 
-fw('''
+    fw('''
 .br
 .SH SEE ALSO
 .B luxrender(1)
@@ -134,5 +134,4 @@ This manpage was written for a Debian GNU/Linux system by Daniel Mester
 <cyril.brulebois@enst-bretagne.fr> and Dan Eicher <dan@trollwerks.org>.
 ''')
 
-outfile.close()
 print("written:", outfilename)

@@ -65,31 +65,28 @@ class FuncDefVisitor(c_ast.NodeVisitor):
     dummy_typedefs = ['size_t', 'CUdeviceptr']
 
     def _get_quals_string(self, node):
-        if node.quals:
-            return ' '.join(node.quals) + ' '
-        return ''
+        return ' '.join(node.quals) + ' ' if node.quals else ''
 
     def _get_ident_type(self, node):
         if isinstance(node, c_ast.PtrDecl):
-            return self._get_ident_type(node.type.type) + '*'
+            return f'{self._get_ident_type(node.type.type)}*'
         if isinstance(node, c_ast.ArrayDecl):
             return self._get_ident_type(node.type)
         elif isinstance(node, c_ast.Struct):
             if node.name:
-                return 'struct ' + node.name
-            else:
-                self.indent += 1
-                struct = self._stringify_struct(node)
-                self.indent -= 1
-                return "struct {\n" + \
-                       struct + ("  " * self.indent) + "}"
+                return f'struct {node.name}'
+            self.indent += 1
+            struct = self._stringify_struct(node)
+            self.indent -= 1
+            return "struct {\n" + \
+                   struct + ("  " * self.indent) + "}"
         elif isinstance(node, c_ast.Union):
             self.indent += 1
             union = self._stringify_struct(node)
             self.indent -= 1
             return "union {\n" + union + ("  " * self.indent) + "}"
         elif isinstance(node, c_ast.Enum):
-            return 'enum ' + node.name
+            return f'enum {node.name}'
         elif isinstance(node, c_ast.TypeDecl):
             return self._get_ident_type(node.type)
         else:
@@ -100,7 +97,7 @@ class FuncDefVisitor(c_ast.NodeVisitor):
         result = self._get_quals_string(param)
         result += self._get_ident_type(param_type)
         if param.name:
-            result += ' ' + param.name
+            result += f' {param.name}'
         if isinstance(param_type, c_ast.ArrayDecl):
             # TODO(sergey): Workaround to deal with the
             # preprocessed file where array size got
@@ -108,13 +105,11 @@ class FuncDefVisitor(c_ast.NodeVisitor):
             dim = param_type.dim.value
             if param.name == "reserved" and dim == "64":
                 dim = "CU_IPC_HANDLE_SIZE"
-            result += '[' + dim + ']'
+            result += f'[{dim}]'
         return result
 
     def _stringify_params(self, params):
-        result = []
-        for param in params:
-            result.append(self._stringify_param(param))
+        result = [self._stringify_param(param) for param in params]
         return ', '.join(result)
 
     def _stringify_struct(self, node):
@@ -134,41 +129,42 @@ class FuncDefVisitor(c_ast.NodeVisitor):
                 for enumerator in enumerators:
                     result += ("  " * self.indent) + enumerator.name
                     if enumerator.value:
-                        result += " = " + enumerator.value.value
+                        result += f" = {enumerator.value.value}"
                     result += ",\n"
                     if enumerator.name.startswith("CUDA_ERROR_"):
                         ERRORS.append(enumerator.name)
         return result
 
     def visit_Decl(self, node):
-        if node.type.__class__.__name__ == 'FuncDecl':
-            if isinstance(node.type, c_ast.FuncDecl):
-                func_decl = node.type
-                func_decl_type = func_decl.type
+        if node.type.__class__.__name__ != 'FuncDecl':
+            return
+        if isinstance(node.type, c_ast.FuncDecl):
+            func_decl = node.type
+            func_decl_type = func_decl.type
 
-                typedef = 'typedef '
-                symbol_name = None
+            typedef = 'typedef '
+            symbol_name = None
 
-                if isinstance(func_decl_type, c_ast.TypeDecl):
-                    symbol_name = func_decl_type.declname
-                    typedef += self._get_quals_string(func_decl_type)
-                    typedef += self._get_ident_type(func_decl_type.type)
-                    typedef += ' CUDAAPI'
-                    typedef += ' t' + symbol_name
-                elif isinstance(func_decl_type, c_ast.PtrDecl):
-                    ptr_type = func_decl_type.type
-                    symbol_name = ptr_type.declname
-                    typedef += self._get_quals_string(ptr_type)
-                    typedef += self._get_ident_type(func_decl_type)
-                    typedef += ' CUDAAPI'
-                    typedef += ' t' + symbol_name
+            if isinstance(func_decl_type, c_ast.TypeDecl):
+                symbol_name = func_decl_type.declname
+                typedef += self._get_quals_string(func_decl_type)
+                typedef += self._get_ident_type(func_decl_type.type)
+                typedef += ' CUDAAPI'
+                typedef += f' t{symbol_name}'
+            elif isinstance(func_decl_type, c_ast.PtrDecl):
+                ptr_type = func_decl_type.type
+                symbol_name = ptr_type.declname
+                typedef += self._get_quals_string(ptr_type)
+                typedef += self._get_ident_type(func_decl_type)
+                typedef += ' CUDAAPI'
+                typedef += f' t{symbol_name}'
 
-                typedef += '(' + \
-                    self._stringify_params(func_decl.args.params) + \
-                    ');'
+            typedef += '(' + \
+                self._stringify_params(func_decl.args.params) + \
+                ');'
 
-                SYMBOLS.append(symbol_name)
-                FUNC_TYPEDEFS.append(typedef)
+            SYMBOLS.append(symbol_name)
+            FUNC_TYPEDEFS.append(typedef)
 
     def visit_Typedef(self, node):
         if node.name in self.dummy_typedefs:
@@ -195,7 +191,7 @@ class FuncDefVisitor(c_ast.NodeVisitor):
         if complex or self.prev_complex:
             typedef = "\ntypedef " + typedef + ";"
         else:
-            typedef = "typedef " + typedef + ";"
+            typedef = f"typedef {typedef};"
 
         TYPEDEFS.append(typedef)
 
@@ -205,7 +201,7 @@ class FuncDefVisitor(c_ast.NodeVisitor):
 def get_latest_cpp():
     path_prefix = "/usr/bin"
     for cpp_version in ["9", "8", "7", "6", "5", "4"]:
-        test_cpp = os.path.join(path_prefix, "cpp-4." + cpp_version)
+        test_cpp = os.path.join(path_prefix, f"cpp-4.{cpp_version}")
         if os.path.exists(test_cpp):
             return test_cpp
     return None
@@ -223,9 +219,14 @@ def preprocess_file(filename, cpp_path):
                      universal_newlines=True)
         text = pipe.communicate()[0]
     except OSError as e:
-        raise RuntimeError("Unable to invoke 'cpp'.  " +
-            'Make sure its path was passed correctly\n' +
-            ('Original error: %s' % e))
+        raise RuntimeError(
+            (
+                "Unable to invoke 'cpp'.  "
+                + 'Make sure its path was passed correctly\n'
+                + f'Original error: {e}'
+            )
+        )
+
 
     return text
 
@@ -255,8 +256,7 @@ def parse_files():
             text = "typedef long size_t;\n" + text
 
         for typedef in sorted(dummy_typedefs):
-            text = "typedef " + dummy_typedefs[typedef] + " " + \
-                typedef + ";\n" + text
+            text = (((f"typedef {dummy_typedefs[typedef]} " + typedef) + ";\n") + text)
 
         ast = parser.parse(text, filepath)
 
@@ -294,8 +294,8 @@ def print_copyright():
 
 
 def open_header_guard():
-    print("#ifndef __%s_H__" % (LIB))
-    print("#define __%s_H__" % (LIB))
+    print(f"#ifndef __{LIB}_H__")
+    print(f"#define __{LIB}_H__")
     print("")
     print("#ifdef __cplusplus")
     print("extern \"C\" {")
@@ -309,7 +309,7 @@ def close_header_guard():
     print("}")
     print("#endif")
     print("")
-    print("#endif  /* __%s_H__ */" % (LIB))
+    print(f"#endif  /* __{LIB}_H__ */")
 
 
 def print_header():
@@ -321,11 +321,11 @@ def print_header():
     print("")
 
     print("/* Defines. */")
-    print("#define %s_VERSION_MAJOR %s" % (LIB, VERSION_MAJOR))
-    print("#define %s_VERSION_MINOR %s" % (LIB, VERSION_MINOR))
+    print(f"#define {LIB}_VERSION_MAJOR {VERSION_MAJOR}")
+    print(f"#define {LIB}_VERSION_MINOR {VERSION_MINOR}")
     print("")
     for define in DEFINES:
-        print('#define %s' % (' '.join(define)))
+        print(f"#define {' '.join(define)}")
     print("")
 
     print("""/* Functions which changed 3.1 -> 3.2 for 64 bit stuff,
@@ -333,7 +333,7 @@ def print_header():
  * ones with _v2 postfix,
  */""")
     for define in DEFINES_V2:
-        print('#define %s' % (' '.join(define)))
+        print(f"#define {' '.join(define)}")
     print("")
 
     print("/* Types. */")
@@ -348,7 +348,7 @@ typedef unsigned int CUdeviceptr;
 """)
 
     for typedef in TYPEDEFS:
-        print('%s' % (typedef))
+        print(f'{typedef}')
 
     # TDO(sergey): This is only specific to CUDA wrapper.
     print("""
@@ -363,13 +363,13 @@ typedef unsigned int CUdeviceptr;
 
     print("/* Function types. */")
     for func_typedef in FUNC_TYPEDEFS:
-        print('%s' % (func_typedef))
+        print(f'{func_typedef}')
     print("")
 
     print("/* Function declarations. */")
     for symbol in SYMBOLS:
         if symbol:
-            print('extern t%s *%s;' % (symbol, symbol))
+            print(f'extern t{symbol} *{symbol};')
         else:
             print("")
 
@@ -380,9 +380,9 @@ typedef unsigned int CUdeviceptr;
     print("  CUEW_ERROR_ATEXIT_FAILED = -2,")
     print("};")
     print("")
-    print("int %sInit(void);" % (LIB.lower()))
+    print(f"int {LIB.lower()}Init(void);")
     # TODO(sergey): Get rid of hardcoded CUresult.
-    print("const char *%sErrorString(CUresult result);" % (LIB.lower()))
+    print(f"const char *{LIB.lower()}ErrorString(CUresult result);")
     print("const char *cuewCompilerPath(void);")
     print("int cuewCompilerVersion(void);")
 
@@ -505,7 +505,7 @@ def print_dl_init():
     print("  /* Fetch all function pointers. */")
     for symbol in SYMBOLS:
         if symbol:
-            print("  %s_LIBRARY_FIND(%s);" % (REAL_LIB, symbol))
+            print(f"  {REAL_LIB}_LIBRARY_FIND({symbol});")
         else:
             print("")
 
@@ -540,7 +540,7 @@ def print_implementation():
     print("/* Function definitions. */")
     for symbol in SYMBOLS:
         if symbol:
-            print('t%s *%s;' % (symbol, symbol))
+            print(f't{symbol} *{symbol};')
         else:
             print("")
     print("")
@@ -557,10 +557,7 @@ def print_implementation():
     print("    case CUDA_SUCCESS: return \"No errors\";")
 
     for error in ERRORS:
-        if error in CUDA_ERRORS:
-            str = CUDA_ERRORS[error]
-        else:
-            str = error[11:]
+        str = CUDA_ERRORS[error] if error in CUDA_ERRORS else error[11:]
         print("    case %s: return \"%s\";" % (error, str))
 
     print("    default: return \"Unknown CUDA error value\";")
@@ -572,9 +569,8 @@ def print_implementation():
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2 and len(sys.argv) != 3:
-        print("Usage: %s hdr|impl [/path/to/cuda/toolkit/include]" %
-              (sys.argv[0]))
+    if len(sys.argv) not in [2, 3]:
+        print(f"Usage: {sys.argv[0]} hdr|impl [/path/to/cuda/toolkit/include]")
         exit(1)
 
     if len(sys.argv) == 3:
@@ -587,5 +583,5 @@ if __name__ == "__main__":
     elif sys.argv[1] == "impl":
         print_implementation()
     else:
-        print("Unknown command %s" % (sys.argv[1]))
+        print(f"Unknown command {sys.argv[1]}")
         exit(1)

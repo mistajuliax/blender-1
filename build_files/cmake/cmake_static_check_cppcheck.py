@@ -38,13 +38,15 @@ CHECKER_IGNORE_PREFIX = [
 CHECKER_BIN = "cppcheck"
 
 CHECKER_ARGS = [
-    # not sure why this is needed, but it is.
-    "-I" + os.path.join(project_source_info.SOURCE_DIR, "extern", "glew", "include"),
-    "--suppress=*:%s/extern/glew/include/GL/glew.h:241" % project_source_info.SOURCE_DIR,
-    "--max-configs=1",  # speeds up execution
-    #  "--check-config", # when includes are missing
-    "--enable=all",  # if you want sixty hundred pedantic suggestions
-    ]
+    "-I"
+    + os.path.join(
+        project_source_info.SOURCE_DIR, "extern", "glew", "include"
+    ),
+    f"--suppress=*:{project_source_info.SOURCE_DIR}/extern/glew/include/GL/glew.h:241",
+    "--max-configs=1",
+    "--enable=all",
+]
+
 
 if USE_QUIET:
     CHECKER_ARGS.append("--quiet")
@@ -74,7 +76,7 @@ def main():
             percent_str = "[" + ("%.2f]" % percent).rjust(7) + " %:"
 
             sys.stdout.flush()
-            sys.stdout.write("%s " % percent_str)
+            sys.stdout.write(f"{percent_str} ")
 
         return subprocess.Popen(cmd)
 

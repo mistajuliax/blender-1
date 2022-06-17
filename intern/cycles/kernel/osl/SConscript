@@ -27,22 +27,26 @@
 
 Import('env')
 
-defs = []
-incs = []
 cxxflags = Split(env['CXXFLAGS'])
 
 sources = env.Glob('*.cpp')
 
-incs.extend('. .. ../svm ../../render ../../util ../../device'.split())
-incs.append(env['BF_OIIO_INC'])
-incs.append(env['BF_BOOST_INC'])
-incs.append(env['BF_OSL_INC'])
-incs.append(env['BF_OPENEXR_INC'].split())
-incs.append('#/intern/atomic')
+incs = list('. .. ../svm ../../render ../../util ../../device'.split())
+incs.extend(
+    (
+        env['BF_OIIO_INC'],
+        env['BF_BOOST_INC'],
+        env['BF_OSL_INC'],
+        env['BF_OPENEXR_INC'].split(),
+        '#/intern/atomic',
+    )
+)
 
-defs.append('CCL_NAMESPACE_BEGIN=namespace ccl {')
-defs.append('CCL_NAMESPACE_END=}')
-defs.append('WITH_OSL')
+defs = [
+    'CCL_NAMESPACE_BEGIN=namespace ccl {',
+    'CCL_NAMESPACE_END=}',
+    'WITH_OSL',
+]
 
 if env['WITH_UNORDERED_MAP_SUPPORT']:
     if env['UNORDERED_MAP_HEADER'] == 'unordered_map':
@@ -60,16 +64,19 @@ if env['WITH_BF_CYCLES_DEBUG']:
     defs.append('WITH_CYCLES_DEBUG')
 
 if env['WITH_BF_CYCLES_LOGGING']:
-    defs.append('WITH_CYCLES_LOGGING')
-    defs.append('GOOGLE_GLOG_DLL_DECL=')
-    defs.append('CYCLES_GFLAGS_NAMESPACE=gflags')
+    defs.extend(
+        (
+            'WITH_CYCLES_LOGGING',
+            'GOOGLE_GLOG_DLL_DECL=',
+            'CYCLES_GFLAGS_NAMESPACE=gflags',
+        )
+    )
+
     if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
         incs.append('#extern/libmv/third_party/glog/src/windows')
-        incs.append('#extern/libmv/third_party/gflags')
     else:
         incs.append('#extern/libmv/third_party/glog/src')
-        incs.append('#extern/libmv/third_party/gflags')
-
+    incs.append('#extern/libmv/third_party/gflags')
 if env['OURPLATFORM'] in ('win32-vc', 'win64-vc'):
     cxxflags.append('-DBOOST_NO_RTTI -DBOOST_NO_TYPEID /fp:fast'.split())
     incs.append(env['BF_PTHREADS_INC'])

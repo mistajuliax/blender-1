@@ -52,17 +52,17 @@ class CyclesRender(bpy.types.RenderEngine):
 
     # final render
     def update(self, data, scene):
-        if not self.session:
-            if self.is_preview:
-                cscene = bpy.context.scene.cycles
-                use_osl = cscene.shading_system and cscene.device == 'CPU'
-
-                engine.create(self, data, scene,
-                              None, None, None, use_osl)
-            else:
-                engine.create(self, data, scene)
-        else:
+        if self.session:
             engine.reset(self, data, scene)
+
+        elif self.is_preview:
+            cscene = bpy.context.scene.cycles
+            use_osl = cscene.shading_system and cscene.device == 'CPU'
+
+            engine.create(self, data, scene,
+                          None, None, None, use_osl)
+        else:
+            engine.create(self, data, scene)
 
     def render(self, scene):
         engine.render(self)

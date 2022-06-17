@@ -180,9 +180,7 @@ FACTORY_FOOTER = """
 
 
 def SuffixForSize(size):
-  if size == "Eigen::Dynamic":
-    return "d"
-  return str(size)
+  return "d" if size == "Eigen::Dynamic" else str(size)
 
 
 def SpecializationFilename(prefix, row_block_size, e_block_size, f_block_size):
@@ -195,35 +193,32 @@ def Specialize():
   """
   Generate specialization code and the conditionals to instantiate it.
   """
-  f = open("schur_eliminator.cc", "w")
-  f.write(HEADER)
-  f.write(FACTORY_FILE_HEADER)
+  with open("schur_eliminator.cc", "w") as f:
+    f.write(HEADER)
+    f.write(FACTORY_FILE_HEADER)
 
-  for row_block_size, e_block_size, f_block_size in SPECIALIZATIONS:
-    output = SpecializationFilename("generated/schur_eliminator",
-                                    row_block_size,
-                                    e_block_size,
-                                    f_block_size) + ".cc"
-    fptr = open(output, "w")
-    fptr.write(HEADER)
+    for row_block_size, e_block_size, f_block_size in SPECIALIZATIONS:
+      output = SpecializationFilename("generated/schur_eliminator",
+                                      row_block_size,
+                                      e_block_size,
+                                      f_block_size) + ".cc"
+      with open(output, "w") as fptr:
+        fptr.write(HEADER)
 
-    template = SPECIALIZATION_FILE
-    if (row_block_size == "Eigen::Dynamic" and
-        e_block_size == "Eigen::Dynamic" and
-        f_block_size == "Eigen::Dynamic"):
-      template = DYNAMIC_FILE
+        template = SPECIALIZATION_FILE
+        if (row_block_size == "Eigen::Dynamic" and
+            e_block_size == "Eigen::Dynamic" and
+            f_block_size == "Eigen::Dynamic"):
+          template = DYNAMIC_FILE
 
-    fptr.write(template % (row_block_size, e_block_size, f_block_size))
-    fptr.close()
-
-    f.write(FACTORY_CONDITIONAL % (row_block_size,
-                                   e_block_size,
-                                   f_block_size,
-                                   row_block_size,
-                                   e_block_size,
-                                   f_block_size))
-  f.write(FACTORY_FOOTER)
-  f.close()
+        fptr.write(template % (row_block_size, e_block_size, f_block_size))
+      f.write(FACTORY_CONDITIONAL % (row_block_size,
+                                     e_block_size,
+                                     f_block_size,
+                                     row_block_size,
+                                     e_block_size,
+                                     f_block_size))
+    f.write(FACTORY_FOOTER)
 
 
 if __name__ == "__main__":

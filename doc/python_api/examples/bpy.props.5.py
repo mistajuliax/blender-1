@@ -73,7 +73,7 @@ scene.test_float = 12.34
 print(scene.test_float)
 
 scene.test_array = (True, False)
-print([x for x in scene.test_array])
+print(list(scene.test_array))
 
 # scene.test_date = "blah"   # this would fail, property is read-only
 print(scene.test_date)

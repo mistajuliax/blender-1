@@ -124,7 +124,7 @@ def pch_emitter(target, source, env):
             obj = t
 
     if not obj:
-        obj = SCons.Util.splitext(str(pch))[0]+'.obj'
+        obj = f'{SCons.Util.splitext(str(pch))[0]}.obj'
 
     target = [pch, obj] # pch must be first, and obj second for the PCHCOM to work
 
@@ -163,17 +163,17 @@ res_builder = SCons.Builder.Builder(action='$RCCOM', suffix='.res')
 
 def pdbGenerator(env, target, source, for_signature):
     if target and env.has_key('PDB') and env['PDB']:
-        return ['/PDB:%s'%target[0].File(env['PDB']).get_string(for_signature),
-                '/DEBUG']
+        return [
+            f"/PDB:{target[0].File(env['PDB']).get_string(for_signature)}",
+            '/DEBUG',
+        ]
 
 def win32ShlinkTargets(target, source, env, for_signature):
     listCmd = []
-    dll = env.FindIxes(target, 'SHLIBPREFIX', 'SHLIBSUFFIX')
-    if dll: listCmd.append("/out:%s"%dll.get_string(for_signature))
-
-    implib = env.FindIxes(target, 'LIBPREFIX', 'LIBSUFFIX')
-    if implib: listCmd.append("/implib:%s"%implib.get_string(for_signature))
-
+    if dll := env.FindIxes(target, 'SHLIBPREFIX', 'SHLIBSUFFIX'):
+        listCmd.append(f"/out:{dll.get_string(for_signature)}")
+    if implib := env.FindIxes(target, 'LIBPREFIX', 'LIBSUFFIX'):
+        listCmd.append(f"/implib:{implib.get_string(for_signature)}")
     return listCmd
 
 def win32ShlinkSources(target, source, env, for_signature):
@@ -183,7 +183,7 @@ def win32ShlinkSources(target, source, env, for_signature):
     for src in source:
         if src == deffile:
             # Treat this source as a .def file.
-            listCmd.append("/def:%s" % src.get_string(for_signature))
+            listCmd.append(f"/def:{src.get_string(for_signature)}")
         else:
             # Just treat it as a generic source file.
             listCmd.append(src)
@@ -196,7 +196,11 @@ def win32LibEmitter(target, source, env):
     no_import_lib = env.get('no_import_lib', 0)
 
     if not dll:
-        raise SCons.Errors.UserError, "A shared library should have exactly one target with the suffix: %s" % env.subst("$SHLIBSUFFIX")
+        raise (
+            SCons.Errors.UserError,
+            f'A shared library should have exactly one target with the suffix: {env.subst("$SHLIBSUFFIX")}',
+        )
+
 
     if env.get("WIN32_INSERT_DEF", 0) and \
        not env.FindIxes(source, "WIN32DEFPREFIX", "WIN32DEFSUFFIX"):
@@ -289,8 +293,7 @@ def generate(env):
     env['RC'] = 'rc'
     env['RCFLAGS'] = SCons.Util.CLVar('')
     env['RCCOM'] = '$RC $_CPPDEFFLAGS $_CPPINCFLAGS $RCFLAGS /fo$TARGET $SOURCES'
-    CScan = env.get_scanner('.c')
-    if CScan:
+    if CScan := env.get_scanner('.c'):
         CScan.add_skey('.rc')
     env['BUILDERS']['RES'] = res_builder
 

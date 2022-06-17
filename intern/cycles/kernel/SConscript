@@ -40,11 +40,7 @@ Import ('env')
 kernel_binaries = []
 
 #Bitness
-if B.bitness == 32:
-    bits = 32
-else:
-    bits = 64
-
+bits = 32 if B.bitness == 32 else 64
 if env['WITH_BF_CYCLES_CUDA_BINARIES']:
     kernel = env.Clone()
 
@@ -74,7 +70,7 @@ if env['WITH_BF_CYCLES_CUDA_BINARIES']:
         print("CUDA version %d.%d detected, build may succeed but only CUDA 6.5 is officially supported." % (cuda_version/10, cuda_version%10))
 
     # nvcc flags
-    nvcc_flags = "-m%s" % (bits)
+    nvcc_flags = f"-m{bits}"
     nvcc_flags += " --cubin --ptxas-options=\"-v\" --use_fast_math"
     nvcc_flags += " -D__KERNEL_CUDA_VERSION__=%d" % (cuda_version)
     nvcc_flags += " -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -DNVCC"

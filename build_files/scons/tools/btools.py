@@ -21,8 +21,7 @@ def get_command_output(*popenargs, **kwargs):
         raise ValueError('stdout argument not allowed, it will be overridden.')
     process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
     output, unused_err = process.communicate()
-    retcode = process.poll()
-    if retcode:
+    if retcode := process.poll():
         cmd = kwargs.get("args")
         if cmd is None:
             cmd = popenargs[0]
@@ -42,19 +41,16 @@ def get_version():
     re_ver_cycle = re.compile("^#\s*define\s+BLENDER_VERSION_CYCLE\s*(\S*)") # optional arg
 
     for l in open(fname, "r"):
-        match = re_ver.match(l)
-        if match:
+        if match := re_ver.match(l):
             ver = int(match.group(1))
             ver_base = "%d.%d" % (ver / 100, ver % 100)
 
-        match = re_ver_char.match(l)
-        if match:
+        if match := re_ver_char.match(l):
             ver_char = match.group(1)
             if ver_char == "BLENDER_CHAR_VERSION":
                 ver_char = ""
 
-        match = re_ver_cycle.match(l)
-        if match:
+        if match := re_ver_cycle.match(l):
             ver_cycle = match.group(1)
             if ver_cycle == "BLENDER_CYCLE_VERSION":
                 ver_cycle = ""
@@ -62,13 +58,13 @@ def get_version():
         if (ver_base is not None) and (ver_char is not None) and (ver_cycle is not None):
             # eg '2.56a-beta'
             if ver_cycle != "release":
-                ver_display = "%s%s-%s" % (ver_base, ver_char, ver_cycle)
+                ver_display = f"{ver_base}{ver_char}-{ver_cycle}"
             else:
-                ver_display = "%s%s" % (ver_base, ver_char)
+                ver_display = f"{ver_base}{ver_char}"
 
             return ver_base, ver_display, ver_cycle
 
-    raise Exception("%s: missing version string" % fname)
+    raise Exception(f"{fname}: missing version string")
 
 def get_hash():
     try:
@@ -79,7 +75,7 @@ def get_hash():
     except subprocess.CalledProcessError as e:
         build_hash = None
         print("WARNING: git errored while retrieving current Blender repository hash (%d)..." % e.returncode)
-    if build_hash == '' or build_hash == None:
+    if build_hash == '' or build_hash is None:
         build_hash = 'UNKNOWN'
 
     return build_hash
@@ -246,7 +242,7 @@ def validate_targets(targs, bc):
 class OurSpawn:
     def ourspawn(self, sh, escape, cmd, args, env):
         newargs = " ".join(args[1:])
-        cmdline = cmd + " " + newargs
+        cmdline = f"{cmd} {newargs}"
         startupinfo = subprocess.STARTUPINFO()
         proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, startupinfo=startupinfo, shell = False, env=env)
@@ -666,7 +662,7 @@ def read_opts(env, cfg, args):
 def buildbot_zip(src, dest, package_name, extension):
     import zipfile
     ln = len(src)+1 # one extra to remove leading os.sep when cleaning root for package_root
-    flist = list()
+    flist = []
 
     # create list of tuples containing file and archive name
     for root, dirs, files in os.walk(src):
@@ -675,23 +671,26 @@ def buildbot_zip(src, dest, package_name, extension):
 
     if extension == '.zip':
         package = zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED)
-        package.comment = package_name + ' is a zip-file containing the Blender software. Visit http://www.blender.org for more information.'
+        package.comment = f'{package_name} is a zip-file containing the Blender software. Visit http://www.blender.org for more information.'
+
         for entry in flist:
             package.write(entry[0], entry[1])
-        package.close()
     else:
         import tarfile
         package = tarfile.open(dest, 'w:bz2')
         for entry in flist:
             package.add(entry[0], entry[1], recursive=False)
-        package.close()
+    package.close()
     bb_zip_name = os.path.normpath(src + os.sep + '..' + os.sep + 'buildbot_upload.zip')
-    print("creating %s" % (bb_zip_name))
+    print(f"creating {bb_zip_name}")
     bb_zip = zipfile.ZipFile(bb_zip_name, 'w', zipfile.ZIP_DEFLATED)
-    print("writing %s to %s" % (dest, bb_zip_name))
+    print(f"writing {dest} to {bb_zip_name}")
     bb_zip.write(dest, os.path.split(dest)[1])
     bb_zip.close()
-    print("removing unneeded packed file %s (to keep install directory clean)" % (dest))
+    print(
+        f"removing unneeded packed file {dest} (to keep install directory clean)"
+    )
+
     os.remove(dest)
     print("done.")
 
@@ -887,17 +886,16 @@ def check_environ():
             os.environ[i].decode('ascii')
         except UnicodeDecodeError:
             problematic_envvars = problematic_envvars + "%s = %s\n" % (i, os.environ[i])
-    if len(problematic_envvars)>0:
-        print("================\n\n")
-        print("@@ ABORTING BUILD @@\n")
-        print("PROBLEM DETECTED WITH ENVIRONMENT")
-        print("---------------------------------\n\n")
-        print("A problem with one or more environment variable was found")
-        print("Their value contain non-ascii characters. Check the below")
-        print("list and override them locally to be ASCII-clean by doing")
-        print("'set VARNAME=cleanvalue' on the command-line prior to")
-        print("starting the build process:\n")
-        print(problematic_envvars)
-        return False
-    else:
+    if len(problematic_envvars) <= 0:
         return True
+    print("================\n\n")
+    print("@@ ABORTING BUILD @@\n")
+    print("PROBLEM DETECTED WITH ENVIRONMENT")
+    print("---------------------------------\n\n")
+    print("A problem with one or more environment variable was found")
+    print("Their value contain non-ascii characters. Check the below")
+    print("list and override them locally to be ASCII-clean by doing")
+    print("'set VARNAME=cleanvalue' on the command-line prior to")
+    print("starting the build process:\n")
+    print(problematic_envvars)
+    return False

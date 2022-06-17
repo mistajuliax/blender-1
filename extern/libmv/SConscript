@@ -13,9 +13,13 @@ defs = []
 incs = '.'
 
 if env['WITH_BF_LIBMV'] or (env['WITH_BF_CYCLES'] and env['WITH_BF_CYCLES_LOGGING']):
-    defs.append('GOOGLE_GLOG_DLL_DECL=')
-    defs.append('WITH_LIBMV_GUARDED_ALLOC')
-    defs.append('LIBMV_NO_FAST_DETECTOR')
+    defs.extend(
+        (
+            'GOOGLE_GLOG_DLL_DECL=',
+            'WITH_LIBMV_GUARDED_ALLOC',
+            'LIBMV_NO_FAST_DETECTOR',
+        )
+    )
 
     incs += ' ../Eigen3 third_party/gflags third_party/gflags/gflags third_party/glog/src third_party/ceres/include third_party/ceres/config ../../intern/guardedalloc'
     incs += ' ' + env['BF_PNG_INC']
@@ -39,7 +43,7 @@ if env['WITH_BF_LIBMV']:
         defs.append('CERES_TR1_SHARED_PTR')
 
     src = env.Glob('intern/*.cc')
-    src.remove('intern' + os.sep + 'stub.cc')
+    src.remove(f'intern{os.sep}stub.cc')
     src += env.Glob('libmv/autotrack/*.cc')
     src += env.Glob('libmv/base/*.cc')
     src += env.Glob('libmv/image/*.cc')

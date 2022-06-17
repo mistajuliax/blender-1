@@ -54,28 +54,29 @@ prefixes = SCons.Util.Split("""
 """)
 
 def find(env):
-    for prefix in prefixes:
-        # First search in the SCons path and then the OS path:
-        if env.WhereIs(prefix + 'gcc') or SCons.Util.WhereIs(prefix + 'gcc'):
-            return prefix
-
-    return ''
+    return next(
+        (
+            prefix
+            for prefix in prefixes
+            if env.WhereIs(f'{prefix}gcc')
+            or SCons.Util.WhereIs(f'{prefix}gcc')
+        ),
+        '',
+    )
 
 def shlib_generator(target, source, env, for_signature):
     cmd = SCons.Util.CLVar(['$SHLINK']) 
 
-    dll = env.FindIxes(target, 'SHLIBPREFIX', 'SHLIBSUFFIX')
-    if dll: cmd.extend(['-o', dll])
-
+    if dll := env.FindIxes(target, 'SHLIBPREFIX', 'SHLIBSUFFIX'):
+        cmd.extend(['-o', dll])
     cmd.extend(['$SOURCES', '$SHLINKFLAGS', '$_LIBDIRFLAGS', '$_LIBFLAGS'])
 
-    implib = env.FindIxes(target, 'LIBPREFIX', 'LIBSUFFIX')
-    if implib: cmd.append('-Wl,--out-implib,'+implib.get_string(for_signature))
-
+    if implib := env.FindIxes(target, 'LIBPREFIX', 'LIBSUFFIX'):
+        cmd.append(f'-Wl,--out-implib,{implib.get_string(for_signature)}')
     def_target = env.FindIxes(target, 'WINDOWSDEFPREFIX', 'WINDOWSDEFSUFFIX')
     insert_def = env.subst("$WINDOWS_INSERT_DEF")
-    if not insert_def in ['', '0', 0] and def_target: \
-        cmd.append('-Wl,--output-def,'+def_target.get_string(for_signature))
+    if insert_def not in ['', '0', 0] and def_target:
+        cmd.append(f'-Wl,--output-def,{def_target.get_string(for_signature)}')
 
     return [cmd]
 
@@ -84,7 +85,11 @@ def shlib_emitter(target, source, env):
     no_import_lib = env.get('no_import_lib', 0)
 
     if not dll:
-        raise SCons.Errors.UserError, "A shared library should have exactly one target with the suffix: %s" % env.subst("$SHLIBSUFFIX")
+        raise (
+            SCons.Errors.UserError,
+            f'A shared library should have exactly one target with the suffix: {env.subst("$SHLIBSUFFIX")}',
+        )
+
 
     if not no_import_lib and \
        not env.FindIxes(target, 'LIBPREFIX', 'LIBSUFFIX'):
@@ -121,7 +126,7 @@ def generate(env):
     if mingw:
         dir = os.path.dirname(mingw)
         env.PrependENVPath('PATH', dir )
-        
+
 
     # Most of mingw is the same as gcc and friends...
     gnu_tools = ['gcc', 'g++', 'gnulink', 'ar', 'gas', 'm4']
@@ -129,18 +134,18 @@ def generate(env):
         SCons.Tool.Tool(tool)(env)
 
     #... but a few things differ:
-    env['CC'] = mingw + 'gcc'
+    env['CC'] = f'{mingw}gcc'
     env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS')
-    env['CXX'] = mingw + 'g++'
+    env['CXX'] = f'{mingw}g++'
     env['SHCXXFLAGS'] = SCons.Util.CLVar('$CXXFLAGS')
     env['SHLINKFLAGS'] = SCons.Util.CLVar('$LINKFLAGS -shared')
     env['SHLINKCOM']   = shlib_action
     env['LDMODULECOM'] = shlib_action
     env.Append(SHLIBEMITTER = [shlib_emitter])
-    env['RANLIB'] = mingw + 'ranlib'
-    env['LINK'] = mingw + 'gcc'
-    env['AS'] = mingw + 'as'
-    env['AR'] = mingw + 'ar'
+    env['RANLIB'] = f'{mingw}ranlib'
+    env['LINK'] = f'{mingw}gcc'
+    env['AS'] = f'{mingw}as'
+    env['AR'] = f'{mingw}ar'
 
     env['WIN32DEFPREFIX']        = ''
     env['WIN32DEFSUFFIX']        = '.def'
@@ -150,7 +155,7 @@ def generate(env):
     env['SHOBJSUFFIX'] = '.o'
     env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 
-    env['RC'] = mingw + 'windres'
+    env['RC'] = f'{mingw}windres'
     env['RCFLAGS'] = SCons.Util.CLVar('')
     env['RCINCFLAGS'] = '$( ${_concat(RCINCPREFIX, CPPPATH, RCINCSUFFIX, __env__, RDirs, TARGET, SOURCE)} $)'
     env['RCINCPREFIX'] = '--include-dir '
