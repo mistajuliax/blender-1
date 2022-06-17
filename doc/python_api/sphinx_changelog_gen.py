@@ -61,7 +61,7 @@ API_F_ARGS = 7
 
 def api_dunp_fname():
     import bpy
-    return "blender_api_%s.py" % "_".join([str(i) for i in bpy.app.version])
+    return f'blender_api_{"_".join([str(i) for i in bpy.app.version])}.py'
 
 
 def api_dump():
@@ -80,7 +80,7 @@ def api_dump():
             continue
 
         for base in struct_info.get_bases():
-            struct_id_str = base.identifier + "." + struct_id_str
+            struct_id_str = f"{base.identifier}.{struct_id_str}"
 
         dump_class = dump_module[struct_id_str] = {}
 
@@ -132,9 +132,9 @@ def api_dump():
         funcs = [(func.identifier, func) for func in struct_info.functions]
         for func_id, func in funcs:
 
-            func_ret_types = tuple([prop.type for prop in func.return_values])
-            func_args_ids = tuple([prop.identifier for prop in func.args])
-            func_args_type = tuple([prop.type for prop in func.args])
+            func_ret_types = tuple(prop.type for prop in func.return_values)
+            func_args_ids = tuple(prop.identifier for prop in func.args)
+            func_args_type = tuple(prop.type for prop in func.args)
 
             dump_class[func_id] = (
                     "func_rna",                 # basic_type
@@ -174,9 +174,8 @@ def api_dump():
     import pprint
 
     filename = api_dunp_fname()
-    filehandle = open(filename, 'w')
-    tot = filehandle.write(pprint.pformat(dump, width=1))
-    filehandle.close()
+    with open(filename, 'w') as filehandle:
+        tot = filehandle.write(pprint.pformat(dump, width=1))
     print("%s, %d bytes written" % (filename, tot))
 
 
@@ -323,14 +322,10 @@ def main():
 
     argv = sys.argv
 
-    if "--" not in argv:
-        argv = []  # as if no args are passed
-    else:
-        argv = argv[argv.index("--") + 1:]  # get all args after "--"
-
+    argv = [] if "--" not in argv else argv[argv.index("--") + 1:]
     # When --help or no args are given, print this help
     usage_text = "Run blender in background mode with this script: "
-    "blender --background --python %s -- [options]" % os.path.basename(__file__)
+    f"blender --background --python {os.path.basename(__file__)} -- [options]"
 
     epilog = "Run this before releases"
 
@@ -355,13 +350,12 @@ def main():
 
     if args.dump:
         api_dump()
+    elif args.api_from and args.api_to and args.api_out:
+        api_changelog(args.api_from, args.api_to, args.api_out)
     else:
-        if args.api_from and args.api_to and args.api_out:
-            api_changelog(args.api_from, args.api_to, args.api_out)
-        else:
-            print("Error: --api_from/api_to/api_out args needed")
-            parser.print_help()
-            return
+        print("Error: --api_from/api_to/api_out args needed")
+        parser.print_help()
+        return
 
     print("batch job finished, exiting")
 

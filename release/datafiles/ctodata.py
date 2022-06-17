@@ -50,7 +50,7 @@ last = data.pop()
 assert(last == 0)
 data = bytes(data)
 
-dname = filename + ".ctodata"
+dname = f"{filename}.ctodata"
 
 sys.stdout.write("Making DATA file <%s>\n" % dname)
 

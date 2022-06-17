@@ -169,7 +169,7 @@ class ScalarBlendModifier(StrokeShader):
         elif self.blend_type == 'MAXIMUM':
             v1 = max(fac * v2, v1)
         else:
-            raise ValueError("unknown curve blend type: " + self.blend_type)
+            raise ValueError(f"unknown curve blend type: {self.blend_type}")
         return v1
 
 
@@ -249,7 +249,7 @@ class ThicknessBlenderMixIn(ThicknessModifierMixIn):
         elif self.position == 'RELATIVE':
             outer, inner = v * self.ratio, v - (v * self.ratio)
         else:
-            raise ValueError("unknown thickness position: " + position)
+            raise ValueError(f"unknown thickness position: {position}")
 
         self.set_thickness(svert, outer, inner)
 
@@ -293,7 +293,7 @@ class BaseThicknessShader(StrokeShader, ThicknessModifierMixIn):
             self.outer = thickness * ratio
             self.inner = thickness - self.outer
         else:
-            raise ValueError("unknown thickness position: " + position)
+            raise ValueError(f"unknown thickness position: {position}")
 
     def shade(self, stroke):
         for svert in stroke:
@@ -457,12 +457,12 @@ class ColorMaterialShader(ColorRampModifier):
         if not self.use_ramp and self.attribute in attributes:
             for svert in it:
                 material = self.func(it)
-                if self.attribute == 'LINE':
-                    b = material.line[0:3]
-                elif self.attribute == 'DIFF':
-                    b = material.diffuse[0:3]
+                if self.attribute == 'DIFF':
+                    b = material.diffuse[:3]
+                elif self.attribute == 'LINE':
+                    b = material.line[:3]
                 else:
-                    b = material.specular[0:3]
+                    b = material.specular[:3]
                 a = svert.attribute.color
                 svert.attribute.color = self.blend_ramp(a, b)
         else:
@@ -1065,15 +1065,18 @@ class FaceMarkBothUP1D(UnaryPredicate1D):
     def __call__(self, inter: ViewEdge):
         fe = inter.first_fedge
         while fe is not None:
-            if fe.is_smooth:
-                if fe.face_mark:
-                    return True
-            elif (fe.nature & Nature.BORDER):
-                if fe.face_mark_left:
-                    return True
-            else:
-                if fe.face_mark_right and fe.face_mark_left:
-                    return True
+            if (
+                fe.is_smooth
+                and fe.face_mark
+                or not fe.is_smooth
+                and fe.nature & Nature.BORDER
+                and fe.face_mark_left
+                or not fe.is_smooth
+                and not fe.nature & Nature.BORDER
+                and fe.face_mark_right
+                and fe.face_mark_left
+            ):
+                return True
             fe = fe.next_fedge
         return False
 
@@ -1082,15 +1085,17 @@ class FaceMarkOneUP1D(UnaryPredicate1D):
     def __call__(self, inter: ViewEdge):
         fe = inter.first_fedge
         while fe is not None:
-            if fe.is_smooth:
-                if fe.face_mark:
-                    return True
-            elif (fe.nature & Nature.BORDER):
-                if fe.face_mark_left:
-                    return True
-            else:
-                if fe.face_mark_right or fe.face_mark_left:
-                    return True
+            if (
+                fe.is_smooth
+                and fe.face_mark
+                or not fe.is_smooth
+                and fe.nature & Nature.BORDER
+                and fe.face_mark_left
+                or not fe.is_smooth
+                and not fe.nature & Nature.BORDER
+                and (fe.face_mark_right or fe.face_mark_left)
+            ):
+                return True
             fe = fe.next_fedge
         return False
 
@@ -1163,14 +1168,11 @@ def get_dashed_pattern(linestyle):
     """Extracts the dashed pattern from the various UI options """
     pattern = []
     if linestyle.dash1 > 0 and linestyle.gap1 > 0:
-        pattern.append(linestyle.dash1)
-        pattern.append(linestyle.gap1)
+        pattern.extend((linestyle.dash1, linestyle.gap1))
     if linestyle.dash2 > 0 and linestyle.gap2 > 0:
-        pattern.append(linestyle.dash2)
-        pattern.append(linestyle.gap2)
+        pattern.extend((linestyle.dash2, linestyle.gap2))
     if linestyle.dash3 > 0 and linestyle.gap3 > 0:
-        pattern.append(linestyle.dash3)
-        pattern.append(linestyle.gap3)
+        pattern.extend((linestyle.dash3, linestyle.gap3))
     return pattern
 
 

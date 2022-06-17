@@ -20,11 +20,15 @@ else:
     src += env.Glob('internal/ceres/generated/partitioned_matrix_view_d_d_d.cc')
     defs.append('CERES_RESTRICT_SCHUR_SPECIALIZATION')
 
-defs.append('CERES_HAVE_PTHREAD')
-defs.append('CERES_NO_SUITESPARSE')
-defs.append('CERES_NO_CXSPARSE')
-defs.append('CERES_NO_LAPACK')
-defs.append('CERES_HAVE_RWLOCK')
+defs.extend(
+    (
+        'CERES_HAVE_PTHREAD',
+        'CERES_NO_SUITESPARSE',
+        'CERES_NO_CXSPARSE',
+        'CERES_NO_LAPACK',
+        'CERES_HAVE_RWLOCK',
+    )
+)
 
 if env['WITH_BF_OPENMP']:
     defs.append('CERES_USE_OPENMP')

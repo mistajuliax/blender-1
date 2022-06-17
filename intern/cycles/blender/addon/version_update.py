@@ -43,21 +43,23 @@ def check_is_new_shading_ntree(node_tree):
 
 
 def check_is_new_shading_material(material):
-    if not material.node_tree:
-        return False
-    return check_is_new_shading_ntree(material.node_tree)
+    return (
+        check_is_new_shading_ntree(material.node_tree)
+        if material.node_tree
+        else False
+    )
 
 
 def check_is_new_shading_world(world):
-    if not world.node_tree:
-        return False
-    return check_is_new_shading_ntree(world.node_tree)
+    return (
+        check_is_new_shading_ntree(world.node_tree)
+        if world.node_tree
+        else False
+    )
 
 
 def check_is_new_shading_lamp(lamp):
-    if not lamp.node_tree:
-        return False
-    return check_is_new_shading_ntree(lamp.node_tree)
+    return check_is_new_shading_ntree(lamp.node_tree) if lamp.node_tree else False
 
 
 def foreach_notree_node(nodetree, callback, traversed):

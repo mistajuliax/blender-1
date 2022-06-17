@@ -45,18 +45,15 @@ global_refs = {}
 
 
 def replace_line(f, i, text, keep_indent=True):
-    file_handle = open(f, 'r')
-    data = file_handle.readlines()
-    file_handle.close()
-
+    with open(f, 'r') as file_handle:
+        data = file_handle.readlines()
     l = data[i]
     ws = l[:len(l) - len(l.lstrip())]
 
     data[i] = "%s%s\n" % (ws, text)
 
-    file_handle = open(f, 'w')
-    file_handle.writelines(data)
-    file_handle.close()
+    with open(f, 'w') as file_handle:
+        file_handle.writelines(data)
 
 
 def source_list(path, filename_check=None):
@@ -106,12 +103,14 @@ def cmake_get_src(f):
         if l.startswith("unset("):
             return False
 
-        if ('set(%s' % name) in l or ('set(' in l and l.endswith(name)):
+        if f'set({name}' in l or ('set(' in l and l.endswith(name)):
             if len(l.split()) > 1:
                 raise Exception("strict formatting not kept 'set(%s*' %s:%d" % (name, f, i))
             return True
 
-        if ("list(APPEND %s" % name) in l or ('list(APPEND ' in l and l.endswith(name)):
+        if f"list(APPEND {name}" in l or (
+            'list(APPEND ' in l and l.endswith(name)
+        ):
             if l.endswith(")"):
                 raise Exception("strict formatting not kept 'list(APPEND %s...)' on 1 line %s:%d" % (name, f, i))
             return True
@@ -241,10 +240,7 @@ def cmake_get_src(f):
 
 
 def is_ignore(f):
-    for ig in IGNORE:
-        if ig in f:
-            return True
-    return False
+    return any(ig in f for ig in IGNORE)
 
 
 def main():
@@ -263,12 +259,9 @@ def main():
             continue
 
         if not os.path.exists(f):
-            refs = global_refs[f]
-            if refs:
-                for cf, i in refs:
-                    errs.append((cf, i))
-            else:
+            if not (refs := global_refs[f]):
                 raise Exception("CMake referenecs missing, internal error, aborting!")
+            errs.extend((cf, i) for cf, i in refs)
             is_err = True
 
     errs.sort()
@@ -304,26 +297,23 @@ def main():
 
     print("\nC/C++ Headers CMake doesnt know about...")
     for hf in sorted(source_list(SOURCE_DIR, is_c_header)):
-        if not is_ignore(hf):
-            if hf not in global_h:
-                print("missing_h: ", hf)
+        if not is_ignore(hf) and hf not in global_h:
+            print("missing_h: ", hf)
 
     if UTF8_CHECK:
         # test encoding
         import traceback
         for files in (global_c, global_h):
             for f in sorted(files):
-                if os.path.exists(f):
-                    # ignore outside of our source tree
-                    if "extern" not in f:
-                        i = 1
-                        try:
-                            for l in open(f, "r", encoding="utf8"):
-                                i += 1
-                        except UnicodeDecodeError:
-                            print("Non utf8: %s:%d" % (f, i))
-                            if i > 1:
-                                traceback.print_exc()
+                if os.path.exists(f) and "extern" not in f:
+                    i = 1
+                    try:
+                        for _ in open(f, "r", encoding="utf8"):
+                            i += 1
+                    except UnicodeDecodeError:
+                        print("Non utf8: %s:%d" % (f, i))
+                        if i > 1:
+                            traceback.print_exc()
 
 if __name__ == "__main__":
     main()

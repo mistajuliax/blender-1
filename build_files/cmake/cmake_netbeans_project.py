@@ -156,7 +156,7 @@ def create_nb_project_main():
 
             for key, item in dirs:
                 f.write('%s  <df name="%s">\n' % (ident, key))
-                write_df(item, ident + "    ")
+                write_df(item, f"{ident}    ")
                 f.write('%s  </df>\n' % ident)
 
             for key in files:

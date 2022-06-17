@@ -20,7 +20,7 @@ LIBDIR = '${LCGDIR}'
 
 # enable ffmpeg  support
 WITH_BF_FFMPEG = True
-BF_FFMPEG = LIBDIR + '/ffmpeg'
+BF_FFMPEG = f'{LIBDIR}/ffmpeg'
 BF_FFMPEG_INC = "${BF_FFMPEG}/include"
 BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
 BF_FFMPEG_LIB = 'avcodec avdevice avformat avutil mp3lame swscale x264 xvidcore theora theoradec theoraenc vorbis vorbisenc vorbisfile ogg bz2'
@@ -30,7 +30,7 @@ BF_PYTHON_VERSION = '3.4'
 WITH_OSX_STATICPYTHON = True
 
 # python 3.4 uses precompiled libraries in bf svn /lib by default
-BF_PYTHON = LIBDIR + '/python'
+BF_PYTHON = f'{LIBDIR}/python'
 BF_PYTHON_INC = '${BF_PYTHON}/include/python${BF_PYTHON_VERSION}m'
 # BF_PYTHON_BINARY = '${BF_PYTHON}/bin/python${BF_PYTHON_VERSION}'
 BF_PYTHON_LIB = 'python${BF_PYTHON_VERSION}m'
@@ -38,7 +38,7 @@ BF_PYTHON_LIBPATH = '${BF_PYTHON}/lib/python${BF_PYTHON_VERSION}'
 # BF_PYTHON_LINKFLAGS = ['-u', '_PyMac_Error', '-framework', 'System']
 
 WITH_BF_OPENAL = True
-BF_OPENAL = LIBDIR + '/openal'
+BF_OPENAL = f'{LIBDIR}/openal'
 
 WITH_BF_STATICOPENAL = False
 BF_OPENAL_INC = '${BF_OPENAL}/include' # only headers from libdir needed for proper use of framework !!!!
@@ -60,13 +60,13 @@ BF_JACK_INC = '${BF_JACK}/headers'
 BF_JACK_LIBPATH = '${BF_JACK}'
 
 WITH_BF_SNDFILE = True
-BF_SNDFILE = LIBDIR + '/sndfile'
+BF_SNDFILE = f'{LIBDIR}/sndfile'
 BF_SNDFILE_INC = '${BF_SNDFILE}/include'
 BF_SNDFILE_LIB = 'sndfile FLAC ogg vorbis vorbisenc'
 BF_SNDFILE_LIBPATH = '${BF_SNDFILE}/lib ${BF_FFMPEG}/lib' #ogg libs are stored in ffmpeg dir
 
 WITH_BF_SDL = True
-BF_SDL = LIBDIR + '/sdl' #$(shell sdl-config --prefix)
+BF_SDL = f'{LIBDIR}/sdl'
 BF_SDL_INC = '${BF_SDL}/include' #$(shell $(BF_SDL)/bin/sdl-config --cflags)
 BF_SDL_LIB = 'SDL2' #BF_SDL #$(shell $(BF_SDL)/bin/sdl-config --libs) -lSDL_mixer
 BF_SDL_LIBPATH = '${BF_SDL}/lib'
@@ -83,7 +83,7 @@ BF_OPENEXR_LIB_STATIC = '${BF_OPENEXR}/lib/libHalf.a ${BF_OPENEXR}/lib/libIlmImf
 WITH_BF_DDS = True
 
 WITH_BF_JPEG = True
-BF_JPEG = LIBDIR + '/jpeg'
+BF_JPEG = f'{LIBDIR}/jpeg'
 BF_JPEG_INC = '${BF_JPEG}/include'
 BF_JPEG_LIB = 'jpeg'
 BF_JPEG_LIBPATH = '${BF_JPEG}/lib'
@@ -95,13 +95,13 @@ BF_OPENJPEG_INC = '${BF_OPENJPEG}'
 BF_OPENJPEG_LIBPATH='${BF_OPENJPEG}/lib'
 
 WITH_BF_PNG = True
-BF_PNG = LIBDIR + '/png'
+BF_PNG = f'{LIBDIR}/png'
 BF_PNG_INC = '${BF_PNG}/include'
 BF_PNG_LIB = 'png'
 BF_PNG_LIBPATH = '${BF_PNG}/lib'
 
 WITH_BF_TIFF = True
-BF_TIFF = LIBDIR + '/tiff'
+BF_TIFF = f'{LIBDIR}/tiff'
 BF_TIFF_INC = '${BF_TIFF}/include'
 BF_TIFF_LIB = 'tiff'
 BF_TIFF_LIBPATH = '${BF_TIFF}/lib'
@@ -123,12 +123,12 @@ BF_BULLET_INC = '${BF_BULLET}'
 BF_BULLET_LIB = 'extern_bullet'
 
 WITH_BF_FFTW3 = True
-BF_FFTW3 = LIBDIR + '/fftw3'
+BF_FFTW3 = f'{LIBDIR}/fftw3'
 BF_FFTW3_INC = '${BF_FFTW3}/include'
 BF_FFTW3_LIB = 'libfftw3'
 BF_FFTW3_LIBPATH = '${BF_FFTW3}/lib'
 
-BF_FREETYPE = LIBDIR + '/freetype'
+BF_FREETYPE = f'{LIBDIR}/freetype'
 BF_FREETYPE_INC = '${BF_FREETYPE}/include ${BF_FREETYPE}/include/freetype2'
 BF_FREETYPE_LIB = 'freetype'
 BF_FREETYPE_LIBPATH = '${BF_FREETYPE}/lib'
@@ -152,11 +152,11 @@ WITH_BF_COLLADA = True
 BF_COLLADA = '#source/blender/collada'
 BF_COLLADA_INC = '${BF_COLLADA}'
 BF_COLLADA_LIB = 'bf_collada'
-BF_OPENCOLLADA = LIBDIR + '/opencollada'
+BF_OPENCOLLADA = f'{LIBDIR}/opencollada'
 BF_OPENCOLLADA_INC = '${BF_OPENCOLLADA}/include'
 BF_OPENCOLLADA_LIB = 'OpenCOLLADASaxFrameworkLoader OpenCOLLADAFramework OpenCOLLADABaseUtils OpenCOLLADAStreamWriter MathMLSolver GeneratedSaxParser xml2 buffer ftoa'
-BF_OPENCOLLADA_LIBPATH = LIBDIR + '/opencollada'
-BF_PCRE = LIBDIR + '/opencollada'
+BF_OPENCOLLADA_LIBPATH = f'{LIBDIR}/opencollada'
+BF_PCRE = f'{LIBDIR}/opencollada'
 BF_PCRE_LIB = 'pcre'
 BF_PCRE_LIBPATH = '${BF_PCRE}/lib'
 #BF_EXPAT = '/usr'
@@ -169,7 +169,7 @@ WITH_BF_CYCLES = True
 #OSL
 
 WITH_BF_CYCLES_OSL = True
-BF_OSL = LIBDIR + '/osl'
+BF_OSL = f'{LIBDIR}/osl'
 BF_OSL_INC = '${BF_OSL}/include'
 # note oslexec would passed via program linkflags, which is needed to
 # make llvm happy with osl_allocate_closure_component
@@ -178,26 +178,26 @@ BF_OSL_LIBPATH = '${BF_OSL}/lib'
 BF_OSL_COMPILER = '${BF_OSL}/bin/oslc'
 
 WITH_BF_LLVM = True
-BF_LLVM = LIBDIR + '/llvm'
+BF_LLVM = f'{LIBDIR}/llvm'
 BF_LLVM_LIB = 'LLVMBitReader LLVMJIT LLVMipo LLVMVectorize LLVMBitWriter LLVMX86CodeGen LLVMX86Desc LLVMX86Info LLVMX86AsmPrinter ' + \
     'LLVMX86Utils LLVMSelectionDAG LLVMCodeGen LLVMScalarOpts LLVMInstCombine LLVMTransformUtils LLVMipa LLVMAnalysis LLVMExecutionEngine ' + \
     'LLVMTarget LLVMMC LLVMCore LLVMSupport LLVMObject'
 BF_LLVM_LIBPATH = '${BF_LLVM}/lib'
 
 WITH_BF_OIIO = True
-BF_OIIO = LIBDIR + '/openimageio'
+BF_OIIO = f'{LIBDIR}/openimageio'
 BF_OIIO_INC = '${BF_OIIO}/include'
 BF_OIIO_LIB = 'OpenImageIO'
 BF_OIIO_LIBPATH = '${BF_OIIO}/lib'
 
 WITH_BF_OCIO = True
-BF_OCIO = LIBDIR + '/opencolorio'
+BF_OCIO = f'{LIBDIR}/opencolorio'
 BF_OCIO_INC = '${BF_OCIO}/include'
 BF_OCIO_LIB = 'OpenColorIO tinyxml yaml-cpp'
 BF_OCIO_LIBPATH = '${BF_OCIO}/lib'
 
 WITH_BF_BOOST = True
-BF_BOOST = LIBDIR + '/boost'
+BF_BOOST = f'{LIBDIR}/boost'
 BF_BOOST_INC = '${BF_BOOST}/include'
 BF_BOOST_LIB = 'boost_date_time-mt boost_filesystem-mt boost_regex-mt boost_system-mt boost_thread-mt boost_wave-mt'
 BF_BOOST_LIB_INTERNATIONAL = 'boost_locale-mt'

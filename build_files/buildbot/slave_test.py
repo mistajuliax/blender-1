@@ -35,6 +35,3 @@ if "cmake" in builder:
     # cmake
     retcode = subprocess.call(['ctest', '.' '--output-on-failure'])
     sys.exit(retcode)
-else:
-    # scons
-    pass

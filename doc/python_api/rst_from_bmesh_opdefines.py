@@ -318,7 +318,7 @@ def main():
                     if tp_sub & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE:
                         tp_str = "/".join(ls)
                     else:
-                        tp_str = ("list of (%s)" % ", ".join(ls))
+                        tp_str = f'list of ({", ".join(ls)})'
 
                     del ls
                 elif tp == BMO_OP_SLOT_MAPPING:

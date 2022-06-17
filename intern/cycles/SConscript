@@ -37,7 +37,7 @@ sources = cycles.Glob('bvh/*.cpp') + cycles.Glob('device/*.cpp') + cycles.Glob('
 sources.append(path.join('kernel', 'kernels', 'cpu', 'kernel.cpp'))
 sources.remove(path.join('util', 'util_view.cpp'))
 
-incs = [] 
+incs = []
 defs = []
 cxxflags = Split(env['CXXFLAGS'])
 
@@ -76,24 +76,32 @@ if env['WITH_BF_CYCLES_LOGGING']:
     defs.append('CYCLES_GFLAGS_NAMESPACE=gflags')
     if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
         incs.append('#extern/libmv/third_party/glog/src/windows')
-        incs.append('#extern/libmv/third_party/gflags')
     else:
         incs.append('#extern/libmv/third_party/glog/src')
-        incs.append('#extern/libmv/third_party/gflags')
-
+    incs.append('#extern/libmv/third_party/gflags')
 incs.extend('. bvh render device kernel kernel/osl kernel/svm util subd'.split())
 incs.extend('#intern/guardedalloc #source/blender/makesrna #source/blender/makesdna #source/blender/blenlib'.split())
 incs.extend('#source/blender/blenloader ../../source/blender/makesrna/intern'.split())
 
-incs.append(env['BF_GLEW_INC'])
-incs.append('#/intern/glew-mx')
-incs.append('#/intern/atomic')
-incs.append('#intern/mikktspace')
+incs.extend(
+    (
+        env['BF_GLEW_INC'],
+        '#/intern/glew-mx',
+        '#/intern/atomic',
+        '#intern/mikktspace',
+    )
+)
+
 incs.extend('#extern/glew/include #extern/clew/include #extern/cuew/include #intern/mikktspace'.split())
 
-incs.append(cycles['BF_OIIO_INC'])
-incs.append(cycles['BF_BOOST_INC'])
-incs.append(cycles['BF_OPENEXR_INC'].split())
+incs.extend(
+    (
+        cycles['BF_OIIO_INC'],
+        cycles['BF_BOOST_INC'],
+        cycles['BF_OPENEXR_INC'].split(),
+    )
+)
+
 incs.extend(cycles['BF_PYTHON_INC'].split())
 
 if env['OURPLATFORM'] in ('win32-vc', 'win64-vc'):
@@ -138,11 +146,14 @@ else:
         kernel_flags['avx'] = kernel_flags['sse41'] + ' -mavx'
         kernel_flags['avx2'] = kernel_flags['avx'] + ' -mavx2 -mfma -mlzcnt -mbmi -mbmi2 -mf16c'
 
-for kernel_type in kernel_flags.keys():
-    defs.append('WITH_KERNEL_' + kernel_type.upper())
+for kernel_type in kernel_flags:
+    defs.append(f'WITH_KERNEL_{kernel_type.upper()}')
 
-for kernel_type in kernel_flags.keys():
-    kernel_source = path.join('kernel', 'kernels', 'cpu', 'kernel_' + kernel_type + '.cpp')
+for kernel_type in kernel_flags:
+    kernel_source = path.join(
+        'kernel', 'kernels', 'cpu', f'kernel_{kernel_type}.cpp'
+    )
+
     kernel_cxxflags = Split(env['CXXFLAGS'])
     kernel_cxxflags.append(kernel_flags[kernel_type].split())
     kernel_defs = defs[:]
@@ -150,12 +161,29 @@ for kernel_type in kernel_flags.keys():
 
     if env['OURPLATFORM'] == 'darwin' and env['C_COMPILER_ID'] == 'gcc' and  env['CCVERSION'] >= '4.6':
         # use Apple assembler for avx , gnu-compilers do not support it ( gnu gcc-4.6 or higher case )
-        kernel_env.BlenderLib('bf_intern_cycles_' + kernel_type, [kernel_source], incs, kernel_defs,
-            libtype=['intern'], priority=[10], cxx_compileflags=kernel_cxxflags,
-            cc_compilerchange='/usr/bin/clang', cxx_compilerchange='/usr/bin/clang++')
+        kernel_env.BlenderLib(
+            f'bf_intern_cycles_{kernel_type}',
+            [kernel_source],
+            incs,
+            kernel_defs,
+            libtype=['intern'],
+            priority=[10],
+            cxx_compileflags=kernel_cxxflags,
+            cc_compilerchange='/usr/bin/clang',
+            cxx_compilerchange='/usr/bin/clang++',
+        )
+
     else:
-        kernel_env.BlenderLib('bf_intern_cycles_' + kernel_type, [kernel_source], incs, kernel_defs,
-            libtype=['intern'], priority=[10], cxx_compileflags=kernel_cxxflags)
+        kernel_env.BlenderLib(
+            f'bf_intern_cycles_{kernel_type}',
+            [kernel_source],
+            incs,
+            kernel_defs,
+            libtype=['intern'],
+            priority=[10],
+            cxx_compileflags=kernel_cxxflags,
+        )
+
 
 cycles.BlenderLib('bf_intern_cycles', sources, incs, defs, libtype=['intern'], priority=[0], cxx_compileflags=cxxflags)
 
